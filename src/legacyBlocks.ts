@@ -175,6 +175,23 @@ export function findLegacyBlocks(document: vscode.TextDocument): LegacyBlockMatc
 			continue;
 		}
 
+		if (blockType === 'save') {
+			const start = new vscode.Position(lineIndex, 0);
+			const end = new vscode.Position(lineIndex, lines[lineIndex].length);
+			const range = new vscode.Range(start, end);
+			const id = `${document.uri.toString()}#${lineIndex}:${blockType}`;
+
+			matches.push({
+				id,
+				blockType,
+				alertLabel,
+				replacementLabel: `[!${alertLabel}] blockquote syntax`,
+				range,
+				replacement: buildReplacement(blockType, []),
+			});
+			continue;
+		}
+
 		const closePattern = new RegExp(`^---\\s*\\/\\s*${blockType}\\s*---\\s*$`, 'i');
 		let closeLineIndex = -1;
 		for (let i = lineIndex + 1; i < lines.length; i += 1) {

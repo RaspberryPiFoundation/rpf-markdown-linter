@@ -30,7 +30,6 @@ describe('legacyBlocks', () => {
 				'--- /challenge ---',
 				'',
 				'--- save ---',
-				'--- /save ---',
 				'',
 				'--- no-print ---',
 				'Invisible in print',
@@ -89,6 +88,14 @@ describe('legacyBlocks', () => {
 	it('builds expected replacement for task blocks', () => {
 		const output = buildReplacement('task', ['', 'Line one', 'Line two', '']);
 		expect(output).toBe('> [!TASK]\n>\n> Line one\n> Line two\n');
+	});
+
+	it('matches standalone save line without closing block', () => {
+		const document = createDocument('Before\n--- save ---\nAfter');
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('save');
+		expect(matches[0].replacement).toBe('> [!SAVE]\n');
 	});
 
 	it('includes collapse title when metadata is present', () => {
