@@ -43,11 +43,31 @@ describe('legacyBlocks', () => {
 				'--- collapse ---',
 				'Inside collapse',
 				'--- /collapse ---',
+				'',
+				'--- code ---',
+				'---',
+				'language: python',
+				'line_numbers: true',
+				'line_number_start: 10',
+				'line_highlights: 11',
+				'---',
+				"print('hello')",
+				'--- /code ---',
 			].join('\n')
 		);
 
 		const matches = findLegacyBlocks(document as never);
-		expect(matches).toHaveLength(7);
+		expect(matches).toHaveLength(8);
+		expect(matches.map((m) => m.blockType)).toEqual([
+			'task',
+			'hint',
+			'challenge',
+			'save',
+			'no-print',
+			'print-only',
+			'collapse',
+			'code',
+		]);
 		expect(matches.map((m) => m.alertLabel)).toEqual([
 			'TASK',
 			'HINT',
@@ -56,6 +76,7 @@ describe('legacyBlocks', () => {
 			'NOPRINT',
 			'PRINTONLY',
 			'ACCORDION',
+			undefined,
 		]);
 	});
 
@@ -81,5 +102,24 @@ describe('legacyBlocks', () => {
 		]);
 
 		expect(output).toBe('> [!ACCORDION] Install software\n>\n> Do this first.\n');
+	});
+
+	it('converts legacy code block metadata to fenced code attributes', () => {
+		const output = buildReplacement('code', [
+			'---',
+			'language: python',
+			'line_numbers: true',
+			'line_number_start: 10',
+			'line_highlights: 11',
+			'---',
+			'',
+			"print('hello')",
+		]);
+
+		expect(output).toBe(
+			'```python line_numbers="true" line_number_start="10" line_highlights="11"\n' +
+				"print('hello')\n" +
+				'```\n'
+		);
 	});
 });

@@ -17,6 +17,7 @@ Supported deprecated blocks in v1:
 - `--- no-print ---` -> `> [!NOPRINT]`
 - `--- print-only ---` -> `> [!PRINTONLY]`
 - `--- collapse ---` -> `> [!ACCORDION]` (best-effort title parsing from `title:` metadata)
+- `--- code ---` -> fenced code blocks with info-string attributes
 
 ## Quick fix behavior
 
@@ -25,12 +26,12 @@ When available, use the lightbulb quick fix on a warning to rewrite the full dep
 - inserts an alert header (`> [!LABEL]`)
 - preserves block body content
 - rewrites body lines as quoted markdown lines
+- for `--- code ---`, rewrites metadata to fenced code attributes (for example `line_numbers="true"`)
 
 ## Current limitations (v1)
 
-The following are intentionally out of scope for v1 and are not auto-migrated:
+The following are intentionally out of scope for v1.1 and are not auto-migrated:
 
-- `--- code ---` conversions
 - grouped hints (`--- hints ---` with nested `--- hint ---`)
 - `--- quiz ---` removal
 - HTML callout/info-box linting

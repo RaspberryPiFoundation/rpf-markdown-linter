@@ -34,7 +34,7 @@ class LegacyMarkdownQuickFixProvider implements vscode.CodeActionProvider {
 			}
 
 			const action = new vscode.CodeAction(
-				`Replace with [!${block.alertLabel}] blockquote syntax`,
+				`Replace with ${block.replacementLabel}`,
 				vscode.CodeActionKind.QuickFix
 			);
 			action.isPreferred = true;
@@ -63,7 +63,7 @@ function updateDiagnostics(
 	const diagnostics = matches.map((match) => {
 		const diagnostic = new vscode.Diagnostic(
 			match.range,
-			`Legacy \`--- ${match.blockType} ---\` syntax is deprecated. Use \`> [!${match.alertLabel}]\` blockquote syntax instead.`,
+			`Legacy \`--- ${match.blockType} ---\` syntax is deprecated. Use ${match.replacementLabel} instead.`,
 			vscode.DiagnosticSeverity.Warning
 		);
 		diagnostic.source = DIAGNOSTIC_SOURCE;

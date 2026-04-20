@@ -13,7 +13,8 @@ const BLOCK_TYPE_TO_ALERT_LABEL: Record<string, string> = {
 export interface LegacyBlockMatch {
 	id: string;
 	blockType: string;
-	alertLabel: string;
+	alertLabel?: string;
+	replacementLabel: string;
 	range: vscode.Range;
 	replacement: string;
 }
@@ -28,10 +29,10 @@ function stripOuterBlankLines(lines: string[]): string[] {
 	let start = 0;
 	let end = lines.length;
 	while (start < end && lines[start].trim() === '') {
-		start += 1;
+		start++;
 	}
 	while (end > start && lines[end - 1].trim() === '') {
-		end -= 1;
+		end--;
 	}
 	return lines.slice(start, end);
 }
@@ -69,7 +70,70 @@ function parseCollapseMetadata(contentLines: string[]): { title?: string; bodyLi
 	};
 }
 
+function parseCodeMetadata(contentLines: string[]): { attributes: string[]; bodyLines: string[] } {
+	const firstNonEmptyIndex = contentLines.findIndex((line) => line.trim().length > 0);
+	if (firstNonEmptyIndex < 0) {
+		return { attributes: [], bodyLines: [] };
+	}
+
+	if (contentLines[firstNonEmptyIndex].trim() !== '---') {
+		return { attributes: [], bodyLines: contentLines };
+	}
+
+	let metadataEndIndex = -1;
+	for (let i = firstNonEmptyIndex + 1; i < contentLines.length; i += 1) {
+		if (contentLines[i].trim() === '---') {
+			metadataEndIndex = i;
+			break;
+		}
+	}
+
+	if (metadataEndIndex < 0) {
+		return { attributes: [], bodyLines: contentLines };
+	}
+
+	const metadataLines = contentLines
+		.slice(firstNonEmptyIndex + 1, metadataEndIndex)
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0);
+	const bodyLines = contentLines.slice(metadataEndIndex + 1);
+
+	const attributes: string[] = [];
+	for (const line of metadataLines) {
+		const separatorIndex = line.indexOf(':');
+		if (separatorIndex <= 0) {
+			continue;
+		}
+
+		const key = line.slice(0, separatorIndex).trim();
+		const value = line.slice(separatorIndex + 1).trim();
+		if (key.length === 0 || value.length === 0) {
+			continue;
+		}
+
+		if (key === 'language') {
+			continue;
+		}
+
+		attributes.push(`${key}="${value}"`);
+	}
+
+	return { attributes, bodyLines };
+}
+
 export function buildReplacement(blockType: string, contentLines: string[]): string {
+	if (blockType === 'code') {
+		const { attributes, bodyLines } = parseCodeMetadata(contentLines);
+		const normalizedBody = stripOuterBlankLines(bodyLines);
+		const languageMetadataLine = contentLines
+			.map((line) => line.trim())
+			.find((line) => line.toLowerCase().startsWith('language:'));
+		const language = languageMetadataLine?.split(':').slice(1).join(':').trim() ?? '';
+		const infoStringParts = [language, ...attributes].filter((part) => part.length > 0);
+		const openingFence = `\`\`\`${infoStringParts.join(' ')}`.trimEnd();
+		return [openingFence, ...normalizedBody, '```', ''].join('\n');
+	}
+
 	const alertLabel = BLOCK_TYPE_TO_ALERT_LABEL[blockType];
 	if (!alertLabel) {
 		return contentLines.join('\n');
@@ -107,7 +171,7 @@ export function findLegacyBlocks(document: vscode.TextDocument): LegacyBlockMatc
 
 		const blockType = openMatch[1].toLowerCase();
 		const alertLabel = BLOCK_TYPE_TO_ALERT_LABEL[blockType];
-		if (!alertLabel) {
+		if (!alertLabel && blockType !== 'code') {
 			continue;
 		}
 
@@ -134,6 +198,7 @@ export function findLegacyBlocks(document: vscode.TextDocument): LegacyBlockMatc
 			id,
 			blockType,
 			alertLabel,
+			replacementLabel: blockType === 'code' ? 'fenced code block syntax' : `[!${alertLabel}] blockquote syntax`,
 			range,
 			replacement: buildReplacement(blockType, contentLines),
 		});
