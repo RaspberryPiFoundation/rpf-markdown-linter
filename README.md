@@ -2,13 +2,15 @@
 
 VS Code extension to help migrate deprecated legacy RPF markdown block syntax to the new blockquote alert style.
 
+<img width="828" height="261" alt="Screenshot 2026-04-20 at 16 32 45" src="https://github.com/user-attachments/assets/dfde5954-6478-40a6-b246-9bef3ea3c2ff" />
+
 ## Features
 
 - Scans markdown files and warns when deprecated legacy blocks are used.
 - Suggests replacements using blockquote alert syntax (for example `> [!TASK]`).
 - Provides quick fixes for straightforward single-block migrations.
 
-Supported deprecated blocks in v1:
+### Supported deprecated blocks in v1:
 
 - `--- task ---` -> `> [!TASK]`
 - `--- hint ---` -> `> [!HINT]`
@@ -27,6 +29,8 @@ When available, use the lightbulb quick fix on a warning to rewrite the full dep
 - preserves block body content
 - rewrites body lines as quoted markdown lines
 - for `--- code ---`, rewrites metadata to fenced code attributes (for example `line_numbers="true"`)
+
+<img width="417" height="388" alt="Screenshot 2026-04-20 at 16 54 31" src="https://github.com/user-attachments/assets/de668ec7-1dac-48e8-8e5a-2e66fa8150fb" />
 
 ## Current limitations (v1)
 
