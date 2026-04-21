@@ -26,9 +26,42 @@ export interface LegacyBlockLintOptions {
 
 const OPEN_BLOCK_PATTERN = /^---\s*([a-z-]+)\s*---\s*$/i;
 const DEFAULT_ALLOWED_HTML_SNIPPETS = ['<br class="page-break"/>', '<br class="page-break" />'];
+const SUPPORTED_BLOCK_TYPES = new Set([
+	'task',
+	'hint',
+	'challenge',
+	'save',
+	'no-print',
+	'print-only',
+	'collapse',
+	'code',
+]);
 
 function normalizeHtmlSnippet(value: string): string {
 	return value.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function findClosingLineIndex(lines: string[], startLineIndex: number, blockType: string): number {
+	const closePattern = new RegExp(`^---\\s*\\/\\s*${blockType}\\s*---\\s*$`, 'i');
+	const openPattern = new RegExp(`^---\\s*${blockType}\\s*---\\s*$`, 'i');
+	let depth = 1;
+
+	for (let i = startLineIndex + 1; i < lines.length; i += 1) {
+		const line = lines[i];
+		if (openPattern.test(line)) {
+			depth += 1;
+			continue;
+		}
+
+		if (closePattern.test(line)) {
+			depth -= 1;
+			if (depth === 0) {
+				return i;
+			}
+		}
+	}
+
+	return -1;
 }
 
 function quoteLines(lines: string[]): string[] {
@@ -158,7 +191,7 @@ export function buildReplacement(blockType: string, contentLines: string[]): str
 		bodyLines = collapseData.bodyLines;
 	}
 
-	const normalizedBody = stripOuterBlankLines(bodyLines);
+	const normalizedBody = stripOuterBlankLines(rewriteNestedBlocks(bodyLines));
 	const header = title ? `> [!${alertLabel}] ${title}` : `> [!${alertLabel}]`;
 
 	if (normalizedBody.length === 0) {
@@ -167,6 +200,49 @@ export function buildReplacement(blockType: string, contentLines: string[]): str
 
 	const quotedBody = quoteLines(normalizedBody);
 	return [header, '>', ...quotedBody, ''].join('\n');
+}
+
+function rewriteNestedBlocks(lines: string[]): string[] {
+	const output: string[] = [];
+
+	for (let i = 0; i < lines.length; i += 1) {
+		const openMatch = lines[i].match(OPEN_BLOCK_PATTERN);
+		if (!openMatch) {
+			output.push(lines[i]);
+			continue;
+		}
+
+		const blockType = openMatch[1].toLowerCase();
+		if (!SUPPORTED_BLOCK_TYPES.has(blockType)) {
+			output.push(lines[i]);
+			continue;
+		}
+
+		if (blockType === 'save') {
+			const replacementLines = buildReplacement(blockType, []).split('\n');
+			if (replacementLines[replacementLines.length - 1] === '') {
+				replacementLines.pop();
+			}
+			output.push(...replacementLines);
+			continue;
+		}
+
+		const closeLineIndex = findClosingLineIndex(lines, i, blockType);
+		if (closeLineIndex < 0) {
+			output.push(lines[i]);
+			continue;
+		}
+
+		const nestedContent = lines.slice(i + 1, closeLineIndex);
+		const replacementLines = buildReplacement(blockType, nestedContent).split('\n');
+		if (replacementLines[replacementLines.length - 1] === '') {
+			replacementLines.pop();
+		}
+		output.push(...replacementLines);
+		i = closeLineIndex;
+	}
+
+	return output;
 }
 
 export function findLegacyBlocks(
@@ -226,6 +302,27 @@ export function findLegacyBlocks(
 		}
 
 		const blockType = openMatch[1].toLowerCase();
+		if (blockType === 'hints') {
+			const closeLineIndex = findClosingLineIndex(lines, lineIndex, blockType);
+			if (closeLineIndex < 0) {
+				continue;
+			}
+
+			const start = new vscode.Position(lineIndex, 0);
+			const end = new vscode.Position(closeLineIndex, lines[closeLineIndex].length);
+			const range = new vscode.Range(start, end);
+			const id = `${document.uri.toString()}#${lineIndex}:${blockType}`;
+			matches.push({
+				id,
+				blockType,
+				message:
+					'Grouped `--- hints ---` blocks are deprecated and are not auto-migrated yet. Convert grouped hints manually to supported blockquote syntax.',
+				range,
+			});
+			lineIndex = closeLineIndex;
+			continue;
+		}
+
 		const alertLabel = BLOCK_TYPE_TO_ALERT_LABEL[blockType];
 		if (!alertLabel && blockType !== 'code') {
 			continue;
@@ -249,15 +346,7 @@ export function findLegacyBlocks(
 			continue;
 		}
 
-		const closePattern = new RegExp(`^---\\s*\\/\\s*${blockType}\\s*---\\s*$`, 'i');
-		let closeLineIndex = -1;
-		for (let i = lineIndex + 1; i < lines.length; i += 1) {
-			if (closePattern.test(lines[i])) {
-				closeLineIndex = i;
-				break;
-			}
-		}
-
+		const closeLineIndex = findClosingLineIndex(lines, lineIndex, blockType);
 		if (closeLineIndex < 0) {
 			continue;
 		}

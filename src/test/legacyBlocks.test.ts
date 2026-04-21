@@ -171,4 +171,52 @@ describe('legacyBlocks', () => {
 		const matches = findLegacyBlocks(document as never, { allowedHtmlSnippets: allowDiv });
 		expect(matches).toHaveLength(0);
 	});
+
+	it('converts nested task inside no-print to nested blockquote syntax', () => {
+		const output = buildReplacement('no-print', [
+			'--- task ---',
+			'### Play ▶️',
+			'Click sprite one.',
+			'--- /task ---',
+		]);
+
+		expect(output).toBe(
+			'> [!NOPRINT]\n' +
+				'>\n' +
+				'> > [!TASK]\n' +
+				'> >\n' +
+				'> > ### Play ▶️\n' +
+				'> > Click sprite one.\n'
+		);
+	});
+
+	it('converts nested hint inside task to nested blockquote syntax', () => {
+		const output = buildReplacement('task', [
+			'Now, add code to make buttons play sounds.',
+			'',
+			'--- hint ---',
+			'Try adding `btn_cymbal`.',
+			'--- /hint ---',
+		]);
+
+		expect(output).toBe(
+			'> [!TASK]\n' +
+				'>\n' +
+				'> Now, add code to make buttons play sounds.\n' +
+				'>\n' +
+				'> > [!HINT]\n' +
+				'> >\n' +
+				'> > Try adding `btn_cymbal`.\n'
+		);
+	});
+
+	it('warns for grouped hints wrapper without quick fix', () => {
+		const document = createDocument(
+			['--- hints ---', '--- hint ---', 'Hint 1', '--- /hint ---', '--- /hints ---'].join('\n')
+		);
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('hints');
+		expect(matches[0].replacement).toBeUndefined();
+	});
 });
