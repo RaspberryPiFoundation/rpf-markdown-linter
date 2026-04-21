@@ -41,6 +41,14 @@ The following are intentionally out of scope for v1.1 and are not auto-migrated:
 - `--- quiz ---` removal
 - automatic HTML-to-markdown conversion
 
+## Configuration
+
+- `rpfMarkdownLinter.allowedHtmlSnippets`: list of HTML snippets that should not raise warnings.
+- Default allowlist includes:
+  - `<br class="page-break"/>`
+  - `<br class="page-break" />`
+- Matching is case-insensitive and normalizes repeated whitespace.
+
 ## Development
 
 - `yarn compile` to build

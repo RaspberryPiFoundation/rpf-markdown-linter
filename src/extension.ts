@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { findLegacyBlocks, type LegacyBlockMatch } from './legacyBlocks';
 
 const DIAGNOSTIC_SOURCE = 'rpf-markdown-linter';
+const CONFIG_SECTION = 'rpfMarkdownLinter';
+const HTML_ALLOWLIST_SETTING = 'allowedHtmlSnippets';
 
 class LegacyMarkdownQuickFixProvider implements vscode.CodeActionProvider {
 	constructor(private readonly blocksByDocument: Map<string, Map<string, LegacyBlockMatch>>) {}
@@ -62,7 +64,9 @@ function updateDiagnostics(
 		return;
 	}
 
-	const matches = findLegacyBlocks(document);
+	const config = vscode.workspace.getConfiguration(CONFIG_SECTION, document.uri);
+	const allowedHtmlSnippets = config.get<string[]>(HTML_ALLOWLIST_SETTING);
+	const matches = findLegacyBlocks(document, { allowedHtmlSnippets });
 	const diagnostics = matches.map((match) => {
 		const diagnostic = new vscode.Diagnostic(
 			match.range,

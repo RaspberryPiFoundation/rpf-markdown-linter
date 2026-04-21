@@ -13,7 +13,24 @@
     "onLanguage:markdown"
   ],
   "main": "./out/extension.js",
-  "contributes": {},
+  "contributes": {
+    "configuration": {
+      "title": "RPF Markdown Linter",
+      "properties": {
+        "rpfMarkdownLinter.allowedHtmlSnippets": {
+          "type": "array",
+          "default": [
+            "<br class=\"page-break\"/>",
+            "<br class=\"page-break\" />"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "HTML snippets allowed in markdown without warnings. Comparison is case-insensitive and whitespace-normalized."
+        }
+      }
+    }
+  },
   "scripts": {
     "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",

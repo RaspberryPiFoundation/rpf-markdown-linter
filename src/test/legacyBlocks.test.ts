@@ -158,4 +158,17 @@ describe('legacyBlocks', () => {
 		expect(matches).toHaveLength(1);
 		expect(matches[0].blockType).toBe('code');
 	});
+
+	it('does not warn for default page-break br snippet', () => {
+		const document = createDocument('Text before <br class="page-break"/> text after');
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(0);
+	});
+
+	it('uses configurable html safelist overrides', () => {
+		const allowDiv = ['<div class="tip">'];
+		const document = createDocument('<div class="tip">content</div>');
+		const matches = findLegacyBlocks(document as never, { allowedHtmlSnippets: allowDiv });
+		expect(matches).toHaveLength(0);
+	});
 });

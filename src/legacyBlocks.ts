@@ -20,7 +20,16 @@ export interface LegacyBlockMatch {
 	replacement?: string;
 }
 
+export interface LegacyBlockLintOptions {
+	allowedHtmlSnippets?: string[];
+}
+
 const OPEN_BLOCK_PATTERN = /^---\s*([a-z-]+)\s*---\s*$/i;
+const DEFAULT_ALLOWED_HTML_SNIPPETS = ['<br class="page-break"/>', '<br class="page-break" />'];
+
+function normalizeHtmlSnippet(value: string): string {
+	return value.replace(/\s+/g, ' ').trim().toLowerCase();
+}
 
 function quoteLines(lines: string[]): string[] {
 	return lines.map((line) => (line.length === 0 ? '>' : `> ${line}`));
@@ -160,9 +169,15 @@ export function buildReplacement(blockType: string, contentLines: string[]): str
 	return [header, '>', ...quotedBody, ''].join('\n');
 }
 
-export function findLegacyBlocks(document: vscode.TextDocument): LegacyBlockMatch[] {
+export function findLegacyBlocks(
+	document: vscode.TextDocument,
+	options: LegacyBlockLintOptions = {}
+): LegacyBlockMatch[] {
 	const lines = document.getText().split(/\r?\n/);
 	const matches: LegacyBlockMatch[] = [];
+	const allowedHtmlSnippets = new Set(
+		(options.allowedHtmlSnippets ?? DEFAULT_ALLOWED_HTML_SNIPPETS).map(normalizeHtmlSnippet)
+	);
 	let inFencedCodeBlock = false;
 	let fenceToken = '';
 
@@ -189,6 +204,11 @@ export function findLegacyBlocks(document: vscode.TextDocument): LegacyBlockMatc
 		if (!openMatch) {
 			const htmlTagMatch = lines[lineIndex].match(/<[/]?[a-zA-Z][\w-]*(\s[^>]*)?>/);
 			if (htmlTagMatch) {
+				const htmlSnippet = normalizeHtmlSnippet(htmlTagMatch[0]);
+				if (allowedHtmlSnippets.has(htmlSnippet)) {
+					continue;
+				}
+
 				const startCharacter = htmlTagMatch.index ?? 0;
 				const start = new vscode.Position(lineIndex, startCharacter);
 				const end = new vscode.Position(lineIndex, startCharacter + htmlTagMatch[0].length);
