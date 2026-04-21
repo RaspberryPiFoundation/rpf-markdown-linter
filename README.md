@@ -20,6 +20,7 @@ VS Code extension to help migrate deprecated legacy RPF markdown block syntax to
 - `--- print-only ---` -> `> [!PRINTONLY]`
 - `--- collapse ---` -> `> [!ACCORDION]` (best-effort title parsing from `title:` metadata)
 - `--- code ---` -> fenced code blocks with info-string attributes
+- custom HTML tags (for example `<div>`, `<iframe>`, `<video>`) -> warning only (no quick fix)
 
 ## Quick fix behavior
 
@@ -38,7 +39,7 @@ The following are intentionally out of scope for v1.1 and are not auto-migrated:
 
 - grouped hints (`--- hints ---` with nested `--- hint ---`)
 - `--- quiz ---` removal
-- HTML callout/info-box linting
+- automatic HTML-to-markdown conversion
 
 ## Development
 

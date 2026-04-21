@@ -32,6 +32,9 @@ class LegacyMarkdownQuickFixProvider implements vscode.CodeActionProvider {
 			if (!block) {
 				continue;
 			}
+			if (!block.replacement || !block.replacementLabel) {
+				continue;
+			}
 
 			const action = new vscode.CodeAction(
 				`Replace with ${block.replacementLabel}`,
@@ -63,7 +66,7 @@ function updateDiagnostics(
 	const diagnostics = matches.map((match) => {
 		const diagnostic = new vscode.Diagnostic(
 			match.range,
-			`Legacy \`--- ${match.blockType} ---\` syntax is deprecated. Use ${match.replacementLabel} instead.`,
+			match.message,
 			vscode.DiagnosticSeverity.Warning
 		);
 		diagnostic.source = DIAGNOSTIC_SOURCE;

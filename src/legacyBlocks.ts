@@ -14,9 +14,10 @@ export interface LegacyBlockMatch {
 	id: string;
 	blockType: string;
 	alertLabel?: string;
-	replacementLabel: string;
+	replacementLabel?: string;
+	message: string;
 	range: vscode.Range;
-	replacement: string;
+	replacement?: string;
 }
 
 const OPEN_BLOCK_PATTERN = /^---\s*([a-z-]+)\s*---\s*$/i;
@@ -162,10 +163,45 @@ export function buildReplacement(blockType: string, contentLines: string[]): str
 export function findLegacyBlocks(document: vscode.TextDocument): LegacyBlockMatch[] {
 	const lines = document.getText().split(/\r?\n/);
 	const matches: LegacyBlockMatch[] = [];
+	let inFencedCodeBlock = false;
+	let fenceToken = '';
 
 	for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+		const trimmedLine = lines[lineIndex].trim();
+		const fenceMatch = trimmedLine.match(/^(```+|~~~+)/);
+		if (fenceMatch) {
+			const token = fenceMatch[1];
+			if (!inFencedCodeBlock) {
+				inFencedCodeBlock = true;
+				fenceToken = token;
+			} else if (token.startsWith(fenceToken[0])) {
+				inFencedCodeBlock = false;
+				fenceToken = '';
+			}
+			continue;
+		}
+
+		if (inFencedCodeBlock) {
+			continue;
+		}
+
 		const openMatch = lines[lineIndex].match(OPEN_BLOCK_PATTERN);
 		if (!openMatch) {
+			const htmlTagMatch = lines[lineIndex].match(/<[/]?[a-zA-Z][\w-]*(\s[^>]*)?>/);
+			if (htmlTagMatch) {
+				const startCharacter = htmlTagMatch.index ?? 0;
+				const start = new vscode.Position(lineIndex, startCharacter);
+				const end = new vscode.Position(lineIndex, startCharacter + htmlTagMatch[0].length);
+				const range = new vscode.Range(start, end);
+				const id = `${document.uri.toString()}#${lineIndex}:html`;
+				matches.push({
+					id,
+					blockType: 'html',
+					message:
+						'Custom HTML in markdown is not recommended. Prefer standard markdown or supported blockquote components.',
+					range,
+				});
+			}
 			continue;
 		}
 
@@ -186,6 +222,7 @@ export function findLegacyBlocks(document: vscode.TextDocument): LegacyBlockMatc
 				blockType,
 				alertLabel,
 				replacementLabel: `[!${alertLabel}] blockquote syntax`,
+				message: `Legacy \`--- ${blockType} ---\` syntax is deprecated. Use \`> [!${alertLabel}]\` blockquote syntax instead.`,
 				range,
 				replacement: buildReplacement(blockType, []),
 			});
@@ -216,6 +253,10 @@ export function findLegacyBlocks(document: vscode.TextDocument): LegacyBlockMatc
 			blockType,
 			alertLabel,
 			replacementLabel: blockType === 'code' ? 'fenced code block syntax' : `[!${alertLabel}] blockquote syntax`,
+			message:
+				blockType === 'code'
+					? 'Legacy `--- code ---` syntax is deprecated. Use fenced code block syntax instead.'
+					: `Legacy \`--- ${blockType} ---\` syntax is deprecated. Use \`> [!${alertLabel}]\` blockquote syntax instead.`,
 			range,
 			replacement: buildReplacement(blockType, contentLines),
 		});

@@ -98,6 +98,12 @@ describe('legacyBlocks', () => {
 		expect(matches[0].replacement).toBe('> [!SAVE]\n');
 	});
 
+	it('ignores orphan closing save block marker', () => {
+		const document = createDocument('Before\n--- /save ---\nAfter');
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(0);
+	});
+
 	it('includes collapse title when metadata is present', () => {
 		const output = buildReplacement('collapse', [
 			'',
@@ -128,5 +134,28 @@ describe('legacyBlocks', () => {
 				"print('hello')\n" +
 				'```\n'
 		);
+	});
+
+	it('warns for html outside code contexts', () => {
+		const document = createDocument('Hello <div class="tip">content</div>');
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('html');
+		expect(matches[0].replacement).toBeUndefined();
+	});
+
+	it('does not warn for html inside fenced code blocks', () => {
+		const document = createDocument(['```html', '<div class="tip">content</div>', '```'].join('\n'));
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(0);
+	});
+
+	it('does not warn for html inside legacy code blocks', () => {
+		const document = createDocument(
+			['--- code ---', '---', 'language: html', '---', '<div class="tip">content</div>', '--- /code ---'].join('\n')
+		);
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('code');
 	});
 });
