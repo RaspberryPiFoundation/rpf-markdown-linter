@@ -46,15 +46,15 @@ function findClosingLineIndex(lines: string[], startLineIndex: number, blockType
 	const openPattern = new RegExp(`^---\\s*${blockType}\\s*---\\s*$`, 'i');
 	let depth = 1;
 
-	for (let i = startLineIndex + 1; i < lines.length; i += 1) {
+	for (let i = startLineIndex + 1; i < lines.length; i++) {
 		const line = lines[i];
 		if (openPattern.test(line)) {
-			depth += 1;
+			depth++;
 			continue;
 		}
 
 		if (closePattern.test(line)) {
-			depth -= 1;
+			depth--;
 			if (depth === 0) {
 				return i;
 			}
@@ -205,7 +205,7 @@ export function buildReplacement(blockType: string, contentLines: string[]): str
 function rewriteNestedBlocks(lines: string[]): string[] {
 	const output: string[] = [];
 
-	for (let i = 0; i < lines.length; i += 1) {
+	for (let i = 0; i < lines.length; i++) {
 		const openMatch = lines[i].match(OPEN_BLOCK_PATTERN);
 		if (!openMatch) {
 			output.push(lines[i]);
@@ -257,7 +257,7 @@ export function findLegacyBlocks(
 	let inFencedCodeBlock = false;
 	let fenceToken = '';
 
-	for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+	for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
 		const trimmedLine = lines[lineIndex].trim();
 		const fenceMatch = trimmedLine.match(/^(```+|~~~+)/);
 		if (fenceMatch) {

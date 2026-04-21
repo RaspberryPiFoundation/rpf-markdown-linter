@@ -14,6 +14,12 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "rpf-markdown-linter.fixAllInWorkspace",
+        "title": "RPF Markdown Linter: Fix All Auto-fixable Issues in Workspace"
+      }
+    ],
     "configuration": {
       "title": "RPF Markdown Linter",
       "properties": {

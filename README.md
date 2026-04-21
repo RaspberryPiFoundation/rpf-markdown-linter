@@ -31,6 +31,11 @@ When available, use the lightbulb quick fix on a warning to rewrite the full dep
 - rewrites body lines as quoted markdown lines
 - for `--- code ---`, rewrites metadata to fenced code attributes (for example `line_numbers="true"`)
 
+You can also run fix-all flows:
+
+- **Current file**: use Source Action -> Fix All to apply all auto-fixable lints in the file.
+- **Workspace/folder**: run `RPF Markdown Linter: Fix All Auto-fixable Issues in Workspace` from the Command Palette.
+
 <img width="417" height="388" alt="Screenshot 2026-04-20 at 16 54 31" src="https://github.com/user-attachments/assets/de668ec7-1dac-48e8-8e5a-2e66fa8150fb" />
 
 ## Current limitations (v1)
