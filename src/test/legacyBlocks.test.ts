@@ -52,11 +52,17 @@ describe('legacyBlocks', () => {
 				'---',
 				"print('hello')",
 				'--- /code ---',
+				'',
+				'--- quiz ---',
+				'---',
+				'## question: Example?',
+				'- ( ) Yes',
+				'--- /quiz ---',
 			].join('\n')
 		);
 
 		const matches = findLegacyBlocks(document as never);
-		expect(matches).toHaveLength(8);
+		expect(matches).toHaveLength(9);
 		expect(matches.map((m) => m.blockType)).toEqual([
 			'task',
 			'hint',
@@ -66,6 +72,7 @@ describe('legacyBlocks', () => {
 			'print-only',
 			'collapse',
 			'code',
+			'quiz',
 		]);
 		expect(matches.map((m) => m.alertLabel)).toEqual([
 			'TASK',
@@ -75,6 +82,7 @@ describe('legacyBlocks', () => {
 			'NOPRINT',
 			'PRINTONLY',
 			'ACCORDION',
+			undefined,
 			undefined,
 		]);
 	});
@@ -218,5 +226,16 @@ describe('legacyBlocks', () => {
 		expect(matches).toHaveLength(1);
 		expect(matches[0].blockType).toBe('hints');
 		expect(matches[0].replacement).toBeUndefined();
+	});
+
+	it('deprecates quiz blocks with removal quick fix', () => {
+		const document = createDocument(
+			['--- quiz ---', '---', '## question: Example?', '- ( ) Yes', '--- /quiz ---'].join('\n')
+		);
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('quiz');
+		expect(matches[0].replacement).toBe('');
+		expect(matches[0].replacementLabel).toContain('removal');
 	});
 });

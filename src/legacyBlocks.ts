@@ -35,6 +35,7 @@ const SUPPORTED_BLOCK_TYPES = new Set([
 	'print-only',
 	'collapse',
 	'code',
+	'quiz',
 ]);
 
 function normalizeHtmlSnippet(value: string): string {
@@ -165,6 +166,10 @@ function parseCodeMetadata(contentLines: string[]): { attributes: string[]; body
 }
 
 export function buildReplacement(blockType: string, contentLines: string[]): string {
+	if (blockType === 'quiz') {
+		return '';
+	}
+
 	if (blockType === 'code') {
 		const { attributes, bodyLines } = parseCodeMetadata(contentLines);
 		const normalizedBody = stripOuterBlankLines(bodyLines);
@@ -324,7 +329,7 @@ export function findLegacyBlocks(
 		}
 
 		const alertLabel = BLOCK_TYPE_TO_ALERT_LABEL[blockType];
-		if (!alertLabel && blockType !== 'code') {
+		if (!alertLabel && blockType !== 'code' && blockType !== 'quiz') {
 			continue;
 		}
 
@@ -361,10 +366,17 @@ export function findLegacyBlocks(
 			id,
 			blockType,
 			alertLabel,
-			replacementLabel: blockType === 'code' ? 'fenced code block syntax' : `[!${alertLabel}] blockquote syntax`,
+			replacementLabel:
+				blockType === 'code'
+					? 'fenced code block syntax'
+					: blockType === 'quiz'
+						? 'removal (quizzes are deprecated)'
+						: `[!${alertLabel}] blockquote syntax`,
 			message:
 				blockType === 'code'
 					? 'Legacy `--- code ---` syntax is deprecated. Use fenced code block syntax instead.'
+					: blockType === 'quiz'
+						? 'Legacy `--- quiz ---` blocks are deprecated and should be removed.'
 					: `Legacy \`--- ${blockType} ---\` syntax is deprecated. Use \`> [!${alertLabel}]\` blockquote syntax instead.`,
 			range,
 			replacement: buildReplacement(blockType, contentLines),
