@@ -39,6 +39,16 @@ You can also run fix-all flows:
 
 <img width="417" height="388" alt="Screenshot 2026-04-20 at 16 54 31" src="https://github.com/user-attachments/assets/de668ec7-1dac-48e8-8e5a-2e66fa8150fb" />
 
+## Installing the extension in VSCode
+
+1. Download the latest `.vsix` file from the [Releases](https://github.com/RaspberryPiFoundation/rpf-markdown-linter/releases) page
+2. Open Visual Studio Code
+3. Press Command+Shift+P to open the command menu and search for "Extensions: Install from VSIX" and select it
+4. When the file browser opens, find where you downloaded the `.vsix` file from step 1 and open it.
+5. The extension should be installed.
+6. Open a `.md` markdown file - you should see lint errors, along with options to quick fix them by pressing Command+fullstop, or hovering on the error squiggles.
+7. You can quick fix an entire folder by pressing Command+Shift+P and searching for `RPF Markdown Linter: Fix All Auto-fixable Issues in Workspace`.
+
 ## Current limitations (v1)
 
 The following are intentionally out of scope for v1.1 and are not auto-migrated:
@@ -59,3 +69,10 @@ The following are intentionally out of scope for v1.1 and are not auto-migrated:
 - `yarn compile` to build
 - `yarn lint` to run linting
 - `yarn test` to run extension tests
+
+## Publishing a new release:
+
+1. Open a PR and increment the version number in `package.json`
+2. Merge the PR
+3. Create a Release with a tag for the version
+4. Once the Release is created, the .vsix file should be uploaded to the release shortly after.
