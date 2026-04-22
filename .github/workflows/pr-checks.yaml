@@ -1,0 +1,34 @@
+name: PR checks
+
+on:
+    pull_request:
+        branches:
+            - main
+    workflow_dispatch:
+permissions:
+    contents: read
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+       
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+
+            - name: Show Yarn version
+              run: yarn --version
+
+            - name: Install dependencies
+              run:  yarn install --immutable
+
+            - name: Lint
+              run: yarn run lint
+
+            - name: Run tests
+              run: yarn run test
