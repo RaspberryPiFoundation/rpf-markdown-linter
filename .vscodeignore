@@ -14,3 +14,4 @@ out/
 esbuild.js
 vitest.**
 .github/**
+.yarn/**
