@@ -238,4 +238,28 @@ describe('legacyBlocks', () => {
 		expect(matches[0].replacement).toBe('');
 		expect(matches[0].replacementLabel).toContain('removal');
 	});
+
+	it('detects indented legacy blocks inside numbered list items', () => {
+		const document = createDocument(
+			[
+				'## Step 2 - Test the PIR motion sensor',
+				'',
+				"1. Open IDLE, create a new file and save it as **parent-detector.py**",
+				'',
+				'    --- collapse ---',
+				'    ---',
+				'    title: Opening IDLE',
+				'    image: images/idle.png',
+				'    ---',
+				'',
+				'    [[[idle-opening]]]',
+				'',
+				'    --- /collapse ---',
+			].join('\n')
+		);
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('collapse');
+		expect(matches[0].replacement).toContain('> [!ACCORDION] Opening IDLE');
+	});
 });

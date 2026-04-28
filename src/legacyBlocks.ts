@@ -24,7 +24,7 @@ export interface LegacyBlockLintOptions {
 	allowedHtmlSnippets?: string[];
 }
 
-const OPEN_BLOCK_PATTERN = /^---\s*([a-z-]+)\s*---\s*$/i;
+const OPEN_BLOCK_PATTERN = /^\s*---\s*([a-z-]+)\s*---\s*$/i;
 const DEFAULT_ALLOWED_HTML_SNIPPETS = ['<br class="page-break"/>', '<br class="page-break" />'];
 const SUPPORTED_BLOCK_TYPES = new Set([
 	'task',
@@ -43,8 +43,8 @@ function normalizeHtmlSnippet(value: string): string {
 }
 
 function findClosingLineIndex(lines: string[], startLineIndex: number, blockType: string): number {
-	const closePattern = new RegExp(`^---\\s*\\/\\s*${blockType}\\s*---\\s*$`, 'i');
-	const openPattern = new RegExp(`^---\\s*${blockType}\\s*---\\s*$`, 'i');
+	const closePattern = new RegExp(`^\\s*---\\s*\\/\\s*${blockType}\\s*---\\s*$`, 'i');
+	const openPattern = new RegExp(`^\\s*---\\s*${blockType}\\s*---\\s*$`, 'i');
 	let depth = 1;
 
 	for (let i = startLineIndex + 1; i < lines.length; i++) {
