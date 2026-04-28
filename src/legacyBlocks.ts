@@ -253,7 +253,7 @@ function rewriteNestedBlocks(lines: string[]): string[] {
 function buildGroupedHintsReplacement(contentLines: string[]): string {
 	const hintBlocks: string[] = [];
 
-	for (let i = 0; i < contentLines.length; i += 1) {
+	for (let i = 0; i < contentLines.length; i++) {
 		const openMatch = contentLines[i].match(OPEN_BLOCK_PATTERN);
 		if (!openMatch || openMatch[1].toLowerCase() !== 'hint') {
 			continue;
