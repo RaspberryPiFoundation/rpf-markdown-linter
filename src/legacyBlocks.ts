@@ -250,6 +250,32 @@ function rewriteNestedBlocks(lines: string[]): string[] {
 	return output;
 }
 
+function buildGroupedHintsReplacement(contentLines: string[]): string {
+	const hintBlocks: string[] = [];
+
+	for (let i = 0; i < contentLines.length; i += 1) {
+		const openMatch = contentLines[i].match(OPEN_BLOCK_PATTERN);
+		if (!openMatch || openMatch[1].toLowerCase() !== 'hint') {
+			continue;
+		}
+
+		const closeLineIndex = findClosingLineIndex(contentLines, i, 'hint');
+		if (closeLineIndex < 0) {
+			continue;
+		}
+
+		const hintContent = contentLines.slice(i + 1, closeLineIndex);
+		hintBlocks.push(buildReplacement('hint', hintContent).trimEnd());
+		i = closeLineIndex;
+	}
+
+	if (hintBlocks.length === 0) {
+		return '';
+	}
+
+	return `${hintBlocks.join('\n\n')}\n`;
+}
+
 export function findLegacyBlocks(
 	document: vscode.TextDocument,
 	options: LegacyBlockLintOptions = {}
@@ -321,7 +347,9 @@ export function findLegacyBlocks(
 				id,
 				blockType,
 				message:
-					'Grouped `--- hints ---` blocks are deprecated and are not auto-migrated yet. Convert grouped hints manually to supported blockquote syntax.',
+					'Grouped `--- hints ---` blocks are deprecated. Use individual `[!HINT]` blocks instead.',
+				replacementLabel: 'individual [!HINT] blockquote syntax',
+				replacement: buildGroupedHintsReplacement(lines.slice(lineIndex + 1, closeLineIndex)),
 				range,
 			});
 			lineIndex = closeLineIndex;

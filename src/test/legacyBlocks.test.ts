@@ -218,14 +218,60 @@ describe('legacyBlocks', () => {
 		);
 	});
 
-	it('warns for grouped hints wrapper without quick fix', () => {
+	it('converts grouped hints wrapper into individual hint blocks', () => {
 		const document = createDocument(
 			['--- hints ---', '--- hint ---', 'Hint 1', '--- /hint ---', '--- /hints ---'].join('\n')
 		);
 		const matches = findLegacyBlocks(document as never);
 		expect(matches).toHaveLength(1);
 		expect(matches[0].blockType).toBe('hints');
-		expect(matches[0].replacement).toBeUndefined();
+		expect(matches[0].replacement).toBe('> [!HINT]\n>\n> Hint 1\n');
+	});
+
+	it('removes hints wrapper and preserves all contained hints', () => {
+		const document = createDocument(
+			[
+				'--- hints ---',
+				'--- hint ---',
+				'',
+				'Hint 1',
+				'',
+				'--- /hint ---',
+				'--- hint ---',
+				'Hint 2',
+				'',
+				'--- /hint ---',
+				'--- hint ---',
+				'',
+				'Hint 3',
+				'--- /hint ---',
+				'--- hint ---',
+				'Hint 4',
+				'--- /hint ---',
+				'',
+				'--- /hints ---',
+			].join('\n')
+		);
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('hints');
+		expect(matches[0].replacement).toBe(
+			'> [!HINT]\n' +
+				'>\n' +
+				'> Hint 1\n' +
+				'\n' +
+				'> [!HINT]\n' +
+				'>\n' +
+				'> Hint 2\n' +
+				'\n' +
+				'> [!HINT]\n' +
+				'>\n' +
+				'> Hint 3\n' +
+				'\n' +
+				'> [!HINT]\n' +
+				'>\n' +
+				'> Hint 4\n'
+		);
 	});
 
 	it('deprecates quiz blocks with removal quick fix', () => {
