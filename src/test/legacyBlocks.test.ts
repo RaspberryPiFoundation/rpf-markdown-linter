@@ -158,6 +158,43 @@ describe('legacyBlocks', () => {
 		expect(matches).toHaveLength(0);
 	});
 
+	it('allows fenced code blocks with valid language and supported attributes', () => {
+		const document = createDocument(
+			[
+				'```python filename="example.py" line_numbers="true" line_number_start="10" line_highlights="11"',
+				"print('hello')",
+				'```',
+			].join('\n')
+		);
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(0);
+	});
+
+	it('warns when a fenced code block is missing a language', () => {
+		const document = createDocument(['```', "print('hello')", '```'].join('\n'));
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('code-fence-language');
+		expect(matches[0].message).toContain('valid programming language');
+	});
+
+	it('warns when the first fenced code block attribute is not a valid language', () => {
+		const document = createDocument(['```filename="example.py" line_numbers="true"', "print('hello')", '```'].join('\n'));
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('code-fence-language');
+		expect(matches[0].message).toContain('valid programming language');
+	});
+
+	it('warns when fenced code block optional attributes are unsupported', () => {
+		const document = createDocument(['```python data-title="Example" line_numbers="true"', "print('hello')", '```'].join('\n'));
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('code-fence-attribute');
+		expect(matches[0].message).toContain('filename');
+		expect(matches[0].message).toContain('line_highlights');
+	});
+
 	it('does not warn for html inside legacy code blocks', () => {
 		const document = createDocument(
 			['--- code ---', '---', 'language: html', '---', '<div class="tip">content</div>', '--- /code ---'].join('\n')
