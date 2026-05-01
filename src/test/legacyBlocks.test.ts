@@ -158,6 +158,43 @@ describe('legacyBlocks', () => {
 		expect(matches).toHaveLength(0);
 	});
 
+	it('allows fenced code blocks with valid language and supported attributes', () => {
+		const document = createDocument(
+			[
+				'```python filename="example.py" line_numbers="true" line_number_start="10" line_highlights="11"',
+				"print('hello')",
+				'```',
+			].join('\n')
+		);
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(0);
+	});
+
+	it('warns when a fenced code block is missing a language', () => {
+		const document = createDocument(['```', "print('hello')", '```'].join('\n'));
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('code-fence-language');
+		expect(matches[0].message).toContain('valid programming language');
+	});
+
+	it('warns when the first fenced code block attribute is not a valid language', () => {
+		const document = createDocument(['```filename="example.py" line_numbers="true"', "print('hello')", '```'].join('\n'));
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('code-fence-language');
+		expect(matches[0].message).toContain('valid programming language');
+	});
+
+	it('warns when fenced code block optional attributes are unsupported', () => {
+		const document = createDocument(['```python data-title="Example" line_numbers="true"', "print('hello')", '```'].join('\n'));
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('code-fence-attribute');
+		expect(matches[0].message).toContain('filename');
+		expect(matches[0].message).toContain('line_highlights');
+	});
+
 	it('does not warn for html inside legacy code blocks', () => {
 		const document = createDocument(
 			['--- code ---', '---', 'language: html', '---', '<div class="tip">content</div>', '--- /code ---'].join('\n')
@@ -218,14 +255,60 @@ describe('legacyBlocks', () => {
 		);
 	});
 
-	it('warns for grouped hints wrapper without quick fix', () => {
+	it('converts grouped hints wrapper into individual hint blocks', () => {
 		const document = createDocument(
 			['--- hints ---', '--- hint ---', 'Hint 1', '--- /hint ---', '--- /hints ---'].join('\n')
 		);
 		const matches = findLegacyBlocks(document as never);
 		expect(matches).toHaveLength(1);
 		expect(matches[0].blockType).toBe('hints');
-		expect(matches[0].replacement).toBeUndefined();
+		expect(matches[0].replacement).toBe('> [!HINT]\n>\n> Hint 1\n');
+	});
+
+	it('removes hints wrapper and preserves all contained hints', () => {
+		const document = createDocument(
+			[
+				'--- hints ---',
+				'--- hint ---',
+				'',
+				'Hint 1',
+				'',
+				'--- /hint ---',
+				'--- hint ---',
+				'Hint 2',
+				'',
+				'--- /hint ---',
+				'--- hint ---',
+				'',
+				'Hint 3',
+				'--- /hint ---',
+				'--- hint ---',
+				'Hint 4',
+				'--- /hint ---',
+				'',
+				'--- /hints ---',
+			].join('\n')
+		);
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('hints');
+		expect(matches[0].replacement).toBe(
+			'> [!HINT]\n' +
+				'>\n' +
+				'> Hint 1\n' +
+				'\n' +
+				'> [!HINT]\n' +
+				'>\n' +
+				'> Hint 2\n' +
+				'\n' +
+				'> [!HINT]\n' +
+				'>\n' +
+				'> Hint 3\n' +
+				'\n' +
+				'> [!HINT]\n' +
+				'>\n' +
+				'> Hint 4\n'
+		);
 	});
 
 	it('deprecates quiz blocks with removal quick fix', () => {
@@ -237,5 +320,29 @@ describe('legacyBlocks', () => {
 		expect(matches[0].blockType).toBe('quiz');
 		expect(matches[0].replacement).toBe('');
 		expect(matches[0].replacementLabel).toContain('removal');
+	});
+
+	it('detects indented legacy blocks inside numbered list items', () => {
+		const document = createDocument(
+			[
+				'## Step 2 - Test the PIR motion sensor',
+				'',
+				"1. Open IDLE, create a new file and save it as **parent-detector.py**",
+				'',
+				'    --- collapse ---',
+				'    ---',
+				'    title: Opening IDLE',
+				'    image: images/idle.png',
+				'    ---',
+				'',
+				'    [[[idle-opening]]]',
+				'',
+				'    --- /collapse ---',
+			].join('\n')
+		);
+		const matches = findLegacyBlocks(document as never);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].blockType).toBe('collapse');
+		expect(matches[0].replacement).toContain('> [!ACCORDION] Opening IDLE');
 	});
 });
