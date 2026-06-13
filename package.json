@@ -55,7 +55,7 @@
   "devDependencies": {
     "@types/node": "22.x",
     "@types/vscode": "^1.116.0",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "eslint": "^9.39.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
